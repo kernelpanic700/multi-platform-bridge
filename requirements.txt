@@ -1,0 +1,7 @@
+aiogram
+matrix-nio
+httpx
+fastapi
+uvicorn
+pydantic-settings
+python-dotenv

@@ -1,11 +1,40 @@
-import httpx
 import os
-async def download_file(url, filename, save_dir='temp_media'):
-    if not os.path.exists(save_dir): os.makedirs(save_dir)
-    path = os.path.join(save_dir, filename)
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(url, follow_redirects=True)
-        if resp.status_code == 200:
-            with open(path, 'wb') as f: f.write(resp.content)
+import uuid
+from pathlib import Path
+import logging
+
+class MediaUtils:
+    TEMP_DIR = Path("/tmp/bridge_bot")
+
+    @classmethod
+    def ensure_temp_dir(cls):
+        try:
+            cls.TEMP_DIR.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            logging.error(f"Failed to create temp dir: {e}")
+
+    @classmethod
+    def get_temp_path(cls, filename: str) -> str:
+        cls.ensure_temp_dir()
+        # Создаем уникальное имя, чтобы файлы разных пользователей не перемешались
+        unique_name = f"{uuid.uuid4()}_{filename}"
+        return str(cls.TEMP_DIR / unique_name)
+
+    @classmethod
+    async def save_content(cls, content: bytes, filename: str) -> str:
+        path = cls.get_temp_path(filename)
+        try:
+            with open(path, 'wb') as f:
+                f.write(content)
             return path
-    return ''
+        except Exception as e:
+            logging.error(f"Error saving file {filename}: {e}")
+            return None
+
+    @classmethod
+    def delete_file(cls, path: str):
+        if path and os.path.exists(path):
+            try:
+                os.remove(path)
+            except Exception as e:
+                logging.error(f"Error deleting file {path}: {e}")

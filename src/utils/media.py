@@ -16,7 +16,7 @@ class MediaUtils:
     @classmethod
     def get_temp_path(cls, filename: str) -> str:
         cls.ensure_temp_dir()
-        # Создаем уникальное имя, чтобы файлы разных пользователей не перемешались
+        # Create a unique name to prevent files from different users from mixing
         unique_name = f"{uuid.uuid4()}_{filename}"
         return str(cls.TEMP_DIR / unique_name)
 

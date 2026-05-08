@@ -16,7 +16,7 @@ class TelegramAdapter(BaseAdapter):
         
         @self.dp.message()
         async def h(m: types.Message):
-            # Проверяем, входит ли чат в список разрешенных
+            # Check if the chat is in the allowed list
             if str(m.chat.id) not in settings.TG_CHATS:
                 return
 
@@ -24,15 +24,15 @@ class TelegramAdapter(BaseAdapter):
             msg_id = str(m.message_id)
             file_path, file_name = None, None
 
-            # Обработка медиафайлов
+            # Handle media files
             if m.document:
                 file = await self.bot.get_file(m.document.file_id)
                 file_name = m.document.file_name
                 file_path = await self.bot.download_file(file.file_path)
-                # Перезаписываем путь через MediaUtils для единообразия
+                # Rewrite path via MediaUtils for consistency
                 content = await asyncio.to_thread(lambda: open(file_path, 'rb').read())
                 file_path = await MediaUtils.save_content(content, file_name)
-                MediaUtils.delete_file(file_path) # Удаляем временный файл aiogram
+                MediaUtils.delete_file(file_path) # Delete temporary aiogram file
             
             await self.engine.handle_message(BridgeMessage(
                 sender_id=str(m.from_user.id),

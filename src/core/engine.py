@@ -1,4 +1,4 @@
-"import logging
+import logging
 from src.adapters.base import BaseAdapter, BridgeMessage
 from src.core.state import state_manager
 
@@ -16,7 +16,7 @@ class BridgeEngine:
         if state_manager.is_duplicate(message.message_id):
             return
 
-        logging.info(f\"Routing message from {message.platform} ({message.sender_id})\")
+        logging.info(f"Routing message from {message.platform} ({message.sender_id})")
 
         for adapter in self.adapters:
             # Пропускаем адаптер, который прислал сообщение
@@ -29,6 +29,6 @@ class BridgeEngine:
                 else:
                     await adapter.send_message(message)
             except Exception as e:
-                logging.error(f\"Error sending message to {adapter.__class__.__name__}: {e}\")
+                logging.error(f"Error sending message to {adapter.__class__.__name__}: {e}")
 
-engine = BridgeEngine()"
+engine = BridgeEngine()

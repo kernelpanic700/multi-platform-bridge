@@ -1,4 +1,4 @@
-"from collections import deque
+from collections import deque
 
 class StateManager:
     def __init__(self, max_size=10000):
@@ -19,4 +19,4 @@ class StateManager:
             
         return False
 
-state_manager = StateManager()"
+state_manager = StateManager()

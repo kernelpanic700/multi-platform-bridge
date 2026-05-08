@@ -16,7 +16,7 @@ class TestBridgeEngine(unittest.IsolatedAsyncioTestCase):
         return adapter
 
     async def test_engine_routing(self):
-        # Создаем 3 адаптера
+        # Create 3 adapters
         tg = self.create_mock_adapter('telegram')
         mx = self.create_mock_adapter('matrix')
         tm = self.create_mock_adapter('teams')
@@ -25,14 +25,14 @@ class TestBridgeEngine(unittest.IsolatedAsyncioTestCase):
         self.engine.register_adapter(mx)
         self.engine.register_adapter(tm)
         
-        # Сообщение пришло из Telegram
+        # Message received from Telegram
         msg = BridgeMessage(sender_id='123', text='Hello', platform='telegram', message_id='msg1')
         
         await self.engine.handle_message(msg)
         
-        # Telegram не должен получить свое же сообщение
+        # Telegram should not receive its own message
         tg.send_message.assert_not_called()
-        # Остальные должны получить
+        # Others should receive it
         mx.send_message.assert_called_once_with(msg)
         tm.send_message.assert_called_once_with(msg)
 
@@ -42,7 +42,7 @@ class TestBridgeEngine(unittest.IsolatedAsyncioTestCase):
         self.engine.register_adapter(tg)
         self.engine.register_adapter(mx)
         
-        # Сообщение с файлом из Telegram
+        # Message with file from Telegram
         msg = BridgeMessage(sender_id='123', text='File', platform='telegram', message_id='msg2', file_path='/tmp/test.txt')
         
         await self.engine.handle_message(msg)
@@ -51,7 +51,7 @@ class TestBridgeEngine(unittest.IsolatedAsyncioTestCase):
         mx.send_message.assert_not_called()
 
     async def test_engine_duplicate_handling(self):
-        # Мокаем state_manager, чтобы он всегда возвращал True (дубликат)
+        # Mock state_manager to always return True (duplicate)
         with patch('src.core.engine.state_manager') as mock_sm:
             mock_sm.is_duplicate.return_value = True
             
@@ -70,7 +70,7 @@ class TestBridgeEngine(unittest.IsolatedAsyncioTestCase):
         mx = self.create_mock_adapter('matrix')
         tm = self.create_mock_adapter('teams')
         
-        # Matrix будет кидать ошибку
+        # Matrix will throw an error
         mx.send_message.side_effect = Exception('Network error')
         
         self.engine.register_adapter(tg)
@@ -79,10 +79,10 @@ class TestBridgeEngine(unittest.IsolatedAsyncioTestCase):
         
         msg = BridgeMessage(sender_id='123', text='Hello', platform='telegram', message_id='msg4')
         
-        # Вызов не должен упасть
+        # Call should not fail
         await self.engine.handle_message(msg)
         
-        # Teams всё равно должен получить сообщение, несмотря на ошибку Matrix
+        # Teams should still receive the message despite the Matrix error
         tm.send_message.assert_called_once_with(msg)
 
 if __name__ == '__main__':

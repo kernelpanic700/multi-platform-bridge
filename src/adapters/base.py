@@ -7,7 +7,7 @@ class BridgeMessage:
     sender_id: str
     text: str
     platform: str
-    message_id: str  # Уникальный ID сообщения из исходной платформы
+    message_id: str  # Unique message ID from the source platform
     file_path: Optional[str] = None
     file_name: Optional[str] = None
 

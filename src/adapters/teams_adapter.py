@@ -32,7 +32,7 @@ class TeamsAdapter(BaseAdapter):
 
     async def start(self, engine):
         self.engine = engine
-        # Токен будет получен при первой отправке сообщения
+        # Token will be obtained on the first message send
 
     async def send_message(self, m: BridgeMessage):
         token = await self._get_token()
@@ -43,7 +43,7 @@ class TeamsAdapter(BaseAdapter):
         for channel_id in settings.TEAMS_CHANNELS:
             try:
                 async with httpx.AsyncClient() as client:
-                    # Отправка сообщения в конкретный канал
+                    # Send message to a specific channel
                     await client.post(
                         f"https://graph.microsoft.com/v1.0/teams/{channel_id}/channels/general/messages",
                         headers=headers,
@@ -53,10 +53,10 @@ class TeamsAdapter(BaseAdapter):
                 logging.error(f"Teams send_message error to {channel_id}: {e}")
 
     async def send_file(self, m: BridgeMessage):
-        # Реализация загрузки файла в MS Teams через Graph API
-        # Требует загрузки в Drive, получения ссылки и отправки сообщения с вложением
+        # Implementation of file upload to MS Teams via Graph API
+        # Requires uploading to Drive, obtaining a link, and sending a message with an attachment
         logging.info(f"Teams send_file requested for {m.file_name}. (Feature partially implemented)")
-        # В данной версии отправляем текстовое уведомление о файле
+        # In this version, we send a text notification about the file
         await self.send_message(BridgeMessage(
             m.sender_id, 
             f"{m.text}\n📎 File: {m.file_name}", 
@@ -65,7 +65,7 @@ class TeamsAdapter(BaseAdapter):
         ))
 
     async def handle_webhook_event(self, data):
-        # Обработка данных из вебхука Microsoft Teams
+        # Processing data from Microsoft Teams webhook
         try:
             await self.engine.handle_message(BridgeMessage(
                 sender_id=data.get('from', {}).get('id', 'TeamsUser'),

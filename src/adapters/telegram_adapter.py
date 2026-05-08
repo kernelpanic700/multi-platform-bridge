@@ -1,4 +1,4 @@
-"import asyncio
+import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types
 from src.adapters.base import BaseAdapter, BridgeMessage
@@ -38,7 +38,7 @@ class TelegramAdapter(BaseAdapter):
                 sender_id=str(m.from_user.id),
                 text=text,
                 platform=self.platform,
-                message_id=f\"tg_{msg_id}\",
+                message_id=f"tg_{msg_id}",
                 file_path=file_path,
                 file_name=file_name
             ))
@@ -50,7 +50,7 @@ class TelegramAdapter(BaseAdapter):
             try:
                 await self.bot.send_message(chat_id, f'[{m.platform} {m.sender_id}]: {m.text}')
             except Exception as e:
-                logging.error(f\"TG send_message error to {chat_id}: {e}\")
+                logging.error(f"TG send_message error to {chat_id}: {e}")
 
     async def send_file(self, m: BridgeMessage):
         for chat_id in settings.TG_CHATS:
@@ -58,4 +58,4 @@ class TelegramAdapter(BaseAdapter):
                 with open(m.file_path, 'rb') as f:
                     await self.bot.send_document(chat_id, f, caption=f'[{m.platform} {m.sender_id}]: {m.text}')
             except Exception as e:
-                logging.error(f\"TG send_file error to {chat_id}: {e}\")"
+                logging.error(f"TG send_file error to {chat_id}: {e}")

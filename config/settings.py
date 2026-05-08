@@ -1,4 +1,4 @@
-"import yaml
+import yaml
 import os
 from pydantic_settings import BaseSettings
 from pydantic import Field
@@ -35,4 +35,4 @@ class Settings(BaseSettings):
                     self.TEAMS_CHANNELS = data.get('teams', {}).get('channels', [])
 
 settings = Settings()
-settings.load_bridge_config()"
+settings.load_bridge_config()

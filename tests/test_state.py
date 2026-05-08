@@ -13,16 +13,16 @@ class TestStateManager(unittest.TestCase):
         self.assertTrue(sm.is_duplicate('msg1'))
 
     def test_max_size(self):
-        # Создаем менеджер с маленьким размером для теста
+        # Create manager with small size for testing
         sm = StateManager(max_size=2)
         
         sm.is_duplicate('msg1') # index 0
         sm.is_duplicate('msg2') # index 1
         sm.is_duplicate('msg3') # msg1 should be evicted
         
-        # msg2 всё еще должен быть в списке
+        # msg2 should still be in the list
         self.assertTrue(sm.is_duplicate('msg2'))
-        # msg1 должен снова стать 'новым', так как он был вытеснен
+        # msg1 should become 'new' again as it was evicted
         self.assertFalse(sm.is_duplicate('msg1'))
 
 if __name__ == '__main__':

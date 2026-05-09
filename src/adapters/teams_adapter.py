@@ -1,5 +1,6 @@
 import httpx
 import logging
+import time
 from src.adapters.base import BaseAdapter, BridgeMessage
 from config.settings import settings
 
@@ -7,9 +8,10 @@ class TeamsAdapter(BaseAdapter):
     def __init__(self):
         self.platform = 'teams'
         self.token = None
+        self.token_expires_at = 0
 
     async def _get_token(self):
-        if self.token:
+        if self.token and time.time() < (self.token_expires_at - 60):
             return self.token
         
         url = f"https://login.microsoftonline.com/{settings.TEAMS_TENANT_ID}/oauth2/v2.0/token"
@@ -24,7 +26,9 @@ class TeamsAdapter(BaseAdapter):
             try:
                 resp = await client.post(url, data=data)
                 resp.raise_for_status()
-                self.token = resp.json().get('access_token')
+                res_data = resp.json()
+                self.token = res_data.get('access_token')
+                self.token_expires_at = time.time() + res_data.get('expires_in', 3600)
                 return self.token
             except Exception as e:
                 logging.error(f"Teams OAuth2 error: {e}")
@@ -32,7 +36,7 @@ class TeamsAdapter(BaseAdapter):
 
     async def start(self, engine):
         self.engine = engine
-        # Token will be obtained on the first message send
+        await self._get_token()
 
     async def send_message(self, m: BridgeMessage):
         token = await self._get_token()
@@ -40,23 +44,19 @@ class TeamsAdapter(BaseAdapter):
 
         headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
         
-        for channel_id in settings.TEAMS_CHANNELS:
-            try:
-                async with httpx.AsyncClient() as client:
-                    # Send message to a specific channel
+        async with httpx.AsyncClient() as client:
+            for channel_id in settings.TEAMS_CHANNELS:
+                try:
                     await client.post(
                         f"https://graph.microsoft.com/v1.0/teams/{channel_id}/channels/general/messages",
                         headers=headers,
                         json={"body": {"content": f"[{m.platform} {m.sender_id}]: {m.text}"}}
                     )
-            except Exception as e:
-                logging.error(f"Teams send_message error to {channel_id}: {e}")
+                except Exception as e:
+                    logging.error(f"Teams send_message error to {channel_id}: {e}")
 
     async def send_file(self, m: BridgeMessage):
-        # Implementation of file upload to MS Teams via Graph API
-        # Requires uploading to Drive, obtaining a link, and sending a message with an attachment
         logging.info(f"Teams send_file requested for {m.file_name}. (Feature partially implemented)")
-        # In this version, we send a text notification about the file
         await self.send_message(BridgeMessage(
             m.sender_id, 
             f"{m.text}\n📎 File: {m.file_name}", 
@@ -65,7 +65,6 @@ class TeamsAdapter(BaseAdapter):
         ))
 
     async def handle_webhook_event(self, data):
-        # Processing data from Microsoft Teams webhook
         try:
             await self.engine.handle_message(BridgeMessage(
                 sender_id=data.get('from', {}).get('id', 'TeamsUser'),

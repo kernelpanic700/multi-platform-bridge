@@ -7,3 +7,10 @@ pydantic-settings
 python-dotenv
 PyYAML
 aiofiles
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+ruff
+black

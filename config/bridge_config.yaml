@@ -1,5 +1,5 @@
-# Конфигурация синхронизированных каналов
-# Все чаты из одного раздела будут синхронизированы между собой и с другими платформами
+# Synchronized channels configuration
+# All chats in one section will be synced with each other and across platforms
 
 telegram:
   chats: 

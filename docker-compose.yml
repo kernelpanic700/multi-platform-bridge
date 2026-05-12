@@ -1,0 +1,18 @@
+"version: '3.8'
+
+services:
+  bridge-bot:
+    build: .
+    container_name: bridge-bot
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - bridge_temp:/tmp/bridge_bot
+      - ./config:/app/config
+      - ./src:/app/src
+
+volumes:
+  bridge_temp:"

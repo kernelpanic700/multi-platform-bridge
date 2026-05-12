@@ -1,4 +1,4 @@
-import httpx
+"import httpx
 import logging
 import time
 from src.adapters.base import BaseAdapter, BridgeMessage
@@ -9,6 +9,12 @@ class TeamsAdapter(BaseAdapter):
         self.platform = 'teams'
         self.token = None
         self.token_expires_at = 0
+        self.http_client = None
+
+    async def _ensure_client(self):
+        if self.http_client is None:
+            self.http_client = httpx.AsyncClient()
+        return self.http_client
 
     async def _get_token(self):
         if self.token and time.time() < (self.token_expires_at - 60):
@@ -22,46 +28,49 @@ class TeamsAdapter(BaseAdapter):
             "scope": "https://graph.microsoft.com/.default"
         }
         
-        async with httpx.AsyncClient() as client:
-            try:
-                resp = await client.post(url, data=data)
-                resp.raise_for_status()
-                res_data = resp.json()
-                self.token = res_data.get('access_token')
-                self.token_expires_at = time.time() + res_data.get('expires_in', 3600)
-                return self.token
-            except Exception as e:
-                logging.error(f"Teams OAuth2 error: {e}")
-                return None
+        client = await self._ensure_client()
+        resp = await client.post(url, data=data)
+        resp.raise_for_status()
+        res_data = resp.json()
+        self.token = res_data.get('access_token')
+        self.token_expires_at = time.time() + res_data.get('expires_in', 3600)
+        return self.token
 
     async def start(self, engine):
         self.engine = engine
+        await self._ensure_client()
         await self._get_token()
 
     async def send_message(self, m: BridgeMessage):
         token = await self._get_token()
-        if not token: return
+        if not token:
+            return
 
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
         
-        async with httpx.AsyncClient() as client:
-            for channel_id in settings.TEAMS_CHANNELS:
-                try:
-                    await client.post(
-                        f"https://graph.microsoft.com/v1.0/teams/{channel_id}/channels/general/messages",
-                        headers=headers,
-                        json={"body": {"content": f"[{m.platform} {m.sender_id}]: {m.text}"}}
-                    )
-                except Exception as e:
-                    logging.error(f"Teams send_message error to {channel_id}: {e}")
+        client = await self._ensure_client()
+        body = {"body": {"content": f"[{m.platform} {m.sender_id}]: {m.text}"}}
+        
+        for channel_id in settings.TEAMS_CHANNELS:
+            try:
+                await client.post(
+                    f"https://graph.microsoft.com/v1.0/teams/{channel_id}/channels/general/messages",
+                    headers=headers,
+                    json=body
+                )
+            except Exception as e:
+                logging.error(f"Teams send_message error to {channel_id}: {e}")
 
     async def send_file(self, m: BridgeMessage):
         logging.info(f"Teams send_file requested for {m.file_name}. (Feature partially implemented)")
         await self.send_message(BridgeMessage(
-            m.sender_id, 
-            f"{m.text}\n📎 File: {m.file_name}", 
-            m.platform, 
-            m.message_id
+            sender_id=m.sender_id,
+            text=f"{m.text}\n📎 File: {m.file_name}",
+            platform=m.platform,
+            message_id=m.message_id
         ))
 
     async def handle_webhook_event(self, data):
@@ -76,3 +85,8 @@ class TeamsAdapter(BaseAdapter):
             ))
         except Exception as e:
             logging.error(f"Error handling Teams webhook: {e}")
+
+    async def close(self):
+        if self.http_client:
+            await self.http_client.aclose()
+            self.http_client = None"
